@@ -36,7 +36,7 @@ public class ProductoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(productoService.crearProducto(request));
     }
 
-    @PutMapping("/{id}/stock")
+    @PatchMapping("/{id}/stock")
     public ResponseEntity<Producto> actualizarStock(
             @PathVariable Long id,
             @RequestBody Map<String, Integer> body) {

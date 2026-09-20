@@ -99,12 +99,20 @@ public class BoletaService {
         boletaRepository.delete(boleta);
 
         // Hibernate hace flush antes del SELECT siguiente, así que la lista ya excluye la boleta eliminada
-        return obtenerTodas();
+        return obtenerTodas(null, null);
     }
 
-    public List<Boleta> obtenerTodas() {
-        List<Boleta> boletas = boletaRepository.findAllByOrderByFechaAsc();
-        asignarNumeros(boletas, buildNumerosMapDesde(boletas));
+    public List<Boleta> obtenerTodas(String dni, String cliente) {
+        List<Boleta> boletas;
+        if (dni != null && !dni.isBlank()) {
+            boletas = boletaRepository.findByClienteDniOrderByFechaDesc(dni.strip());
+        } else if (cliente != null && !cliente.isBlank()) {
+            boletas = boletaRepository.findByClienteNombreContainingIgnoreCaseOrderByFechaDesc(cliente.strip());
+        } else {
+            boletas = boletaRepository.findAllByOrderByFechaDesc();
+        }
+        Map<Long, Integer> numeros = buildNumerosMap(); // siempre en ASC para numeración correcta
+        boletas.forEach(b -> b.setNumeroBoleta(numeros.get(b.getId())));
         return boletas;
     }
 

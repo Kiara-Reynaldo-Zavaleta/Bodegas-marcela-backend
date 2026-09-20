@@ -38,7 +38,6 @@ public class ReporteService {
         Map<DayOfWeek, List<Boleta>> porDia = boletaRepository.findAll().stream()
             .collect(Collectors.groupingBy(b -> b.getFecha().getDayOfWeek()));
 
-        // DayOfWeek.values() devuelve Lunes→Domingo (orden ISO)
         return Arrays.stream(DayOfWeek.values())
             .map(dia -> {
                 List<Boleta> grupo = porDia.getOrDefault(dia, List.of());

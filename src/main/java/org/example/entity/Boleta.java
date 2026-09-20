@@ -14,8 +14,6 @@ import java.util.List;
 // formaPago: null cuando la boleta es FIADO (aún no ha pagado)
 // estadoPago: columna con default 'PAGADO' para que ddl-auto=update no deje nulls en filas existentes
 
-// numeroBoleta es @Transient: JPA lo ignora, Jackson lo serializa
-
 @Entity
 @Table(name = "boletas")
 @Getter

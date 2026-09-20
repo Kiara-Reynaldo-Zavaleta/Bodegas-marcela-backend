@@ -12,9 +12,13 @@ public interface BoletaRepository extends JpaRepository<Boleta, Long> {
 
     List<Boleta> findAllByOrderByFechaAsc();
 
+    List<Boleta> findAllByOrderByFechaDesc();
+
     List<Boleta> findByFechaBetween(LocalDateTime inicio, LocalDateTime fin);
 
     List<Boleta> findByClienteDniOrderByFechaDesc(String clienteDni);
+
+    List<Boleta> findByClienteNombreContainingIgnoreCaseOrderByFechaDesc(String clienteNombre);
 
     List<Boleta> findByEstadoPagoOrderByFechaAsc(org.example.entity.EstadoPago estadoPago);
 }

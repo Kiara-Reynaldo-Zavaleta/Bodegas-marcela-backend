@@ -34,8 +34,10 @@ public class BoletaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Boleta>> obtenerTodas() {
-        return ResponseEntity.ok(boletaService.obtenerTodas());
+    public ResponseEntity<List<Boleta>> obtenerTodas(
+            @RequestParam(required = false) String dni,
+            @RequestParam(required = false) String cliente) {
+        return ResponseEntity.ok(boletaService.obtenerTodas(dni, cliente));
     }
 
     @GetMapping("/cliente/{dni}")
