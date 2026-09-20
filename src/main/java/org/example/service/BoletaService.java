@@ -83,6 +83,10 @@ public class BoletaService {
         return boletaRepository.findAll();
     }
 
+    public List<Boleta> obtenerPorDni(String dni) {
+        return boletaRepository.findByClienteDniOrderByFechaDesc(dni);
+    }
+
     public List<Boleta> obtenerPorFecha(LocalDate fecha) {
         LocalDateTime inicio = fecha.atStartOfDay();
         LocalDateTime fin = fecha.plusDays(1).atStartOfDay();

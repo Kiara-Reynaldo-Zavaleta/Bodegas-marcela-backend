@@ -11,4 +11,6 @@ import java.util.List;
 public interface BoletaRepository extends JpaRepository<Boleta, Long> {
 
     List<Boleta> findByFechaBetween(LocalDateTime inicio, LocalDateTime fin);
+
+    List<Boleta> findByClienteDniOrderByFechaDesc(String clienteDni);
 }

@@ -35,6 +35,11 @@ public class BoletaController {
         return ResponseEntity.ok(boletaService.obtenerTodas());
     }
 
+    @GetMapping("/cliente/{dni}")
+    public ResponseEntity<List<Boleta>> obtenerPorDni(@PathVariable String dni) {
+        return ResponseEntity.ok(boletaService.obtenerPorDni(dni));
+    }
+
     @GetMapping("/fecha")
     public ResponseEntity<List<Boleta>> obtenerPorFecha(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
