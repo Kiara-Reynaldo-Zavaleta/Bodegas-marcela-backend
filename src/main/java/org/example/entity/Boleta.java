@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+// numeroBoleta es @Transient: JPA lo ignora, Jackson lo serializa
+
 @Entity
 @Table(name = "boletas")
 @Getter
@@ -25,7 +27,7 @@ public class Boleta {
     @Column(nullable = false)
     private String clienteNombre;
 
-    @Column(nullable = false)
+    @Column
     private String clienteDni;
 
     @Column(nullable = false)
@@ -37,4 +39,7 @@ public class Boleta {
     @OneToMany(mappedBy = "boleta", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<DetalleBoleta> detalles = new ArrayList<>();
+
+    @Transient
+    private Integer numeroBoleta;
 }

@@ -5,6 +5,7 @@ import org.example.dto.VentaRequest;
 import org.example.entity.Boleta;
 import org.example.entity.DetalleBoleta;
 import org.example.entity.Producto;
+import org.example.exception.RecursoNoEncontradoException;
 import org.example.exception.StockInsuficienteException;
 import org.example.repository.BoletaRepository;
 import org.example.repository.ProductoRepository;
@@ -16,13 +17,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class BoletaService {
 
     private static final ZoneId LIMA = ZoneId.of("America/Lima");
-
 
     private final BoletaRepository boletaRepository;
     private final ProductoRepository productoRepository;
@@ -39,7 +41,8 @@ public class BoletaService {
         }
 
         Boleta boleta = new Boleta();
-        boleta.setClienteNombre(request.getClienteNombre());
+        String nombre = request.getClienteNombre();
+        boleta.setClienteNombre((nombre == null || nombre.isBlank()) ? "Cliente varios" : nombre.strip());
         boleta.setClienteDni(request.getClienteDni());
         boleta.setFecha(LocalDateTime.now(LIMA));
 
@@ -50,6 +53,7 @@ public class BoletaService {
             if (item.getProductoId() == null) {
                 throw new IllegalArgumentException("Cada item debe incluir 'productoId'");
             }
+
             Producto producto = productoRepository.findById(item.getProductoId())
                 .orElseThrow(() -> new RuntimeException(
                     "Producto no encontrado con id: " + item.getProductoId()));
@@ -76,21 +80,51 @@ public class BoletaService {
 
         boleta.setTotal(total);
         boleta.setDetalles(detalles);
-        return boletaRepository.save(boleta);
+        Boleta guardada = boletaRepository.save(boleta);
+
+        // Asignar el número que le corresponde a esta boleta recién creada
+        Map<Long, Integer> numeros = buildNumerosMap();
+        guardada.setNumeroBoleta(numeros.get(guardada.getId()));
+        return guardada;
+    }
+
+    @Transactional
+    public void eliminarBoleta(Long id) {
+        Boleta boleta = boletaRepository.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Boleta no encontrada con id: " + id));
+
+        // Restaurar stock de cada producto vendido en esta boleta
+        for (DetalleBoleta detalle : boleta.getDetalles()) {
+            Producto producto = detalle.getProducto();
+            producto.setStock(producto.getStock() + detalle.getCantidad());
+            productoRepository.save(producto);
+        }
+
+        // cascade = ALL en Boleta.detalles elimina los DetalleBoleta automáticamente
+        boletaRepository.delete(boleta);
     }
 
     public List<Boleta> obtenerTodas() {
-        return boletaRepository.findAll();
+        List<Boleta> boletas = boletaRepository.findAllByOrderByFechaAsc();
+        asignarNumeros(boletas, buildNumerosMapDesde(boletas));
+        return boletas;
     }
 
     public List<Boleta> obtenerPorDni(String dni) {
-        return boletaRepository.findByClienteDniOrderByFechaDesc(dni);
+        List<Boleta> boletas = boletaRepository.findByClienteDniOrderByFechaDesc(dni);
+        // Usar posición global para que el número sea consistente con la lista completa
+        Map<Long, Integer> numeros = buildNumerosMap();
+        boletas.forEach(b -> b.setNumeroBoleta(numeros.get(b.getId())));
+        return boletas;
     }
 
     public List<Boleta> obtenerPorFecha(LocalDate fecha) {
         LocalDateTime inicio = fecha.atStartOfDay();
         LocalDateTime fin = fecha.plusDays(1).atStartOfDay();
-        return boletaRepository.findByFechaBetween(inicio, fin);
+        List<Boleta> boletas = boletaRepository.findByFechaBetween(inicio, fin);
+        Map<Long, Integer> numeros = buildNumerosMap();
+        boletas.forEach(b -> b.setNumeroBoleta(numeros.get(b.getId())));
+        return boletas;
     }
 
     public BigDecimal resumenDiario() {
@@ -101,5 +135,22 @@ public class BoletaService {
             .stream()
             .map(Boleta::getTotal)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // Construye el mapa id → número consultando todas las boletas ordenadas por fecha
+    private Map<Long, Integer> buildNumerosMap() {
+        return buildNumerosMapDesde(boletaRepository.findAllByOrderByFechaAsc());
+    }
+
+    private Map<Long, Integer> buildNumerosMapDesde(List<Boleta> boletasOrdenadas) {
+        Map<Long, Integer> numeros = new HashMap<>();
+        for (int i = 0; i < boletasOrdenadas.size(); i++) {
+            numeros.put(boletasOrdenadas.get(i).getId(), i + 1);
+        }
+        return numeros;
+    }
+
+    private void asignarNumeros(List<Boleta> boletas, Map<Long, Integer> numeros) {
+        boletas.forEach(b -> b.setNumeroBoleta(numeros.get(b.getId())));
     }
 }

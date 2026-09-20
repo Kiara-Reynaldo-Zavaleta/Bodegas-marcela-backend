@@ -30,6 +30,12 @@ public class BoletaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(boletaService.registrarVenta(request));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarBoleta(@PathVariable Long id) {
+        boletaService.eliminarBoleta(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     public ResponseEntity<List<Boleta>> obtenerTodas() {
         return ResponseEntity.ok(boletaService.obtenerTodas());
