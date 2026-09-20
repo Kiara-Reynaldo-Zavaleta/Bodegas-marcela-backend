@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.dto.ResumenDiarioDTO;
 import org.example.dto.VentaRequest;
 import org.example.entity.Boleta;
 import org.example.service.BoletaService;
@@ -8,11 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/boletas")
@@ -31,9 +29,8 @@ public class BoletaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarBoleta(@PathVariable Long id) {
-        boletaService.eliminarBoleta(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<List<Boleta>> eliminarBoleta(@PathVariable Long id) {
+        return ResponseEntity.ok(boletaService.eliminarBoleta(id));
     }
 
     @GetMapping
@@ -46,6 +43,11 @@ public class BoletaController {
         return ResponseEntity.ok(boletaService.obtenerPorDni(dni));
     }
 
+    @GetMapping("/fiado")
+    public ResponseEntity<List<Boleta>> obtenerFiado() {
+        return ResponseEntity.ok(boletaService.obtenerFiado());
+    }
+
     @GetMapping("/fecha")
     public ResponseEntity<List<Boleta>> obtenerPorFecha(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -53,11 +55,12 @@ public class BoletaController {
     }
 
     @GetMapping("/caja/resumen-diario")
-    public ResponseEntity<Map<String, Object>> resumenDiario() {
-        BigDecimal total = boletaService.resumenDiario();
-        return ResponseEntity.ok(Map.of(
-            "fecha", LocalDate.now(ZoneId.of("America/Lima")).toString(),
-            "totalVentas", total
-        ));
+    public ResponseEntity<ResumenDiarioDTO> resumenDiario() {
+        return ResponseEntity.ok(boletaService.resumenDiario());
+    }
+
+    @PutMapping("/{id}/pagar")
+    public ResponseEntity<Boleta> marcarPagado(@PathVariable Long id) {
+        return ResponseEntity.ok(boletaService.marcarPagado(id));
     }
 }

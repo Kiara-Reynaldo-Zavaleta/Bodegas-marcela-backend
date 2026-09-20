@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+// formaPago: null cuando la boleta es FIADO (aún no ha pagado)
+// estadoPago: columna con default 'PAGADO' para que ddl-auto=update no deje nulls en filas existentes
+
 // numeroBoleta es @Transient: JPA lo ignora, Jackson lo serializa
 
 @Entity
@@ -35,6 +38,14 @@ public class Boleta {
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private FormaPago formaPago;
+
+    @Column(nullable = false, columnDefinition = "varchar(10) default 'PAGADO'")
+    @Enumerated(EnumType.STRING)
+    private EstadoPago estadoPago = EstadoPago.PAGADO;
 
     @OneToMany(mappedBy = "boleta", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference

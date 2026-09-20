@@ -1,10 +1,9 @@
 package org.example.service;
 
+import org.example.dto.ResumenDiarioDTO;
 import org.example.dto.VentaItemRequest;
 import org.example.dto.VentaRequest;
-import org.example.entity.Boleta;
-import org.example.entity.DetalleBoleta;
-import org.example.entity.Producto;
+import org.example.entity.*;
 import org.example.exception.RecursoNoEncontradoException;
 import org.example.exception.StockInsuficienteException;
 import org.example.repository.BoletaRepository;
@@ -16,10 +15,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class BoletaService {
@@ -45,6 +41,8 @@ public class BoletaService {
         boleta.setClienteNombre((nombre == null || nombre.isBlank()) ? "Cliente varios" : nombre.strip());
         boleta.setClienteDni(request.getClienteDni());
         boleta.setFecha(LocalDateTime.now(LIMA));
+        boleta.setFormaPago(request.getFormaPago());
+        boleta.setEstadoPago(request.getEstadoPago() != null ? request.getEstadoPago() : EstadoPago.PAGADO);
 
         List<DetalleBoleta> detalles = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
@@ -82,26 +80,26 @@ public class BoletaService {
         boleta.setDetalles(detalles);
         Boleta guardada = boletaRepository.save(boleta);
 
-        // Asignar el número que le corresponde a esta boleta recién creada
         Map<Long, Integer> numeros = buildNumerosMap();
         guardada.setNumeroBoleta(numeros.get(guardada.getId()));
         return guardada;
     }
 
     @Transactional
-    public void eliminarBoleta(Long id) {
+    public List<Boleta> eliminarBoleta(Long id) {
         Boleta boleta = boletaRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Boleta no encontrada con id: " + id));
 
-        // Restaurar stock de cada producto vendido en esta boleta
         for (DetalleBoleta detalle : boleta.getDetalles()) {
             Producto producto = detalle.getProducto();
             producto.setStock(producto.getStock() + detalle.getCantidad());
             productoRepository.save(producto);
         }
 
-        // cascade = ALL en Boleta.detalles elimina los DetalleBoleta automáticamente
         boletaRepository.delete(boleta);
+
+        // Hibernate hace flush antes del SELECT siguiente, así que la lista ya excluye la boleta eliminada
+        return obtenerTodas();
     }
 
     public List<Boleta> obtenerTodas() {
@@ -112,7 +110,6 @@ public class BoletaService {
 
     public List<Boleta> obtenerPorDni(String dni) {
         List<Boleta> boletas = boletaRepository.findByClienteDniOrderByFechaDesc(dni);
-        // Usar posición global para que el número sea consistente con la lista completa
         Map<Long, Integer> numeros = buildNumerosMap();
         boletas.forEach(b -> b.setNumeroBoleta(numeros.get(b.getId())));
         return boletas;
@@ -127,17 +124,68 @@ public class BoletaService {
         return boletas;
     }
 
-    public BigDecimal resumenDiario() {
+    public ResumenDiarioDTO resumenDiario() {
         LocalDate hoy = LocalDate.now(LIMA);
         LocalDateTime inicio = hoy.atStartOfDay();
         LocalDateTime fin = hoy.plusDays(1).atStartOfDay();
-        return boletaRepository.findByFechaBetween(inicio, fin)
-            .stream()
+        List<Boleta> boletas = boletaRepository.findByFechaBetween(inicio, fin);
+
+        List<Boleta> cobradas = boletas.stream()
+            .filter(b -> b.getEstadoPago() == EstadoPago.PAGADO)
+            .toList();
+
+        List<Boleta> fiadas = boletas.stream()
+            .filter(b -> b.getEstadoPago() == EstadoPago.FIADO)
+            .toList();
+
+        BigDecimal totalRecaudado = cobradas.stream()
             .map(Boleta::getTotal)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal pendienteCobro = fiadas.stream()
+            .map(Boleta::getTotal)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // LinkedHashMap mantiene el orden EFECTIVO → YAPE → PLIN en el JSON
+        Map<String, BigDecimal> desglose = new LinkedHashMap<>();
+        for (FormaPago fp : FormaPago.values()) {
+            BigDecimal subtotal = cobradas.stream()
+                .filter(b -> fp == b.getFormaPago())
+                .map(Boleta::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            desglose.put(fp.name(), subtotal);
+        }
+
+        return new ResumenDiarioDTO(
+            hoy.toString(),
+            cobradas.size(),
+            totalRecaudado,
+            desglose,
+            fiadas.size(),
+            pendienteCobro
+        );
     }
 
-    // Construye el mapa id → número consultando todas las boletas ordenadas por fecha
+    public List<Boleta> obtenerFiado() {
+        List<Boleta> boletas = boletaRepository.findByEstadoPagoOrderByFechaAsc(EstadoPago.FIADO);
+        Map<Long, Integer> numeros = buildNumerosMap();
+        boletas.forEach(b -> b.setNumeroBoleta(numeros.get(b.getId())));
+        return boletas;
+    }
+
+    @Transactional
+    public Boleta marcarPagado(Long id) {
+        Boleta boleta = boletaRepository.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Boleta no encontrada con id: " + id));
+        if (boleta.getEstadoPago() == EstadoPago.PAGADO) {
+            throw new IllegalStateException("La boleta ya está marcada como pagada");
+        }
+        boleta.setEstadoPago(EstadoPago.PAGADO);
+        Boleta guardada = boletaRepository.save(boleta);
+        guardada.setNumeroBoleta(buildNumerosMap().get(id));
+        return guardada;
+    }
+
     private Map<Long, Integer> buildNumerosMap() {
         return buildNumerosMapDesde(boletaRepository.findAllByOrderByFechaAsc());
     }
