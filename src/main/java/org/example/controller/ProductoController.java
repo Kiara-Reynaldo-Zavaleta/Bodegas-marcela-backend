@@ -47,4 +47,17 @@ public class ProductoController {
         }
         return ResponseEntity.ok(productoService.actualizarStock(id, cantidad));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Producto> actualizarProducto(
+            @PathVariable Long id,
+            @RequestBody ProductoRequest request) {
+        return ResponseEntity.ok(productoService.actualizarProducto(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
+        productoService.eliminarProducto(id);
+        return ResponseEntity.noContent().build();
+    }
 }

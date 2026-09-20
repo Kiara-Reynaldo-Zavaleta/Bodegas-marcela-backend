@@ -27,9 +27,13 @@ public class Producto {
     @Column(nullable = false)
     private Integer stock;
 
+    @Column(nullable = false)
+    private boolean activo = true;
+
     public Producto(String nombre, BigDecimal precio, Integer stock) {
         this.nombre = nombre;
         this.precio = precio;
         this.stock = stock;
+        this.activo = true;
     }
 }

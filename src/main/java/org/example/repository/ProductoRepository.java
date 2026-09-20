@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
-    List<Producto> findByNombreContainingIgnoreCase(String nombre);
+    List<Producto> findAllByActivoTrue();
+
+    List<Producto> findByNombreContainingIgnoreCaseAndActivoTrue(String nombre);
 }
