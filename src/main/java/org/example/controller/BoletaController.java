@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +45,7 @@ public class BoletaController {
     public ResponseEntity<Map<String, Object>> resumenDiario() {
         BigDecimal total = boletaService.resumenDiario();
         return ResponseEntity.ok(Map.of(
-            "fecha", LocalDate.now().toString(),
+            "fecha", LocalDate.now(ZoneId.of("America/Lima")).toString(),
             "totalVentas", total
         ));
     }

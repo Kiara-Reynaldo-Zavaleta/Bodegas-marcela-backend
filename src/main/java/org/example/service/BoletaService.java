@@ -14,11 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class BoletaService {
+
+    private static final ZoneId LIMA = ZoneId.of("America/Lima");
+
 
     private final BoletaRepository boletaRepository;
     private final ProductoRepository productoRepository;
@@ -37,7 +41,7 @@ public class BoletaService {
         Boleta boleta = new Boleta();
         boleta.setClienteNombre(request.getClienteNombre());
         boleta.setClienteDni(request.getClienteDni());
-        boleta.setFecha(LocalDateTime.now());
+        boleta.setFecha(LocalDateTime.now(LIMA));
 
         List<DetalleBoleta> detalles = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
@@ -86,7 +90,7 @@ public class BoletaService {
     }
 
     public BigDecimal resumenDiario() {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(LIMA);
         LocalDateTime inicio = hoy.atStartOfDay();
         LocalDateTime fin = hoy.plusDays(1).atStartOfDay();
         return boletaRepository.findByFechaBetween(inicio, fin)
