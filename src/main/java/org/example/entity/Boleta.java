@@ -42,10 +42,10 @@ public class Boleta {
     @Enumerated(EnumType.STRING)
     private EstadoPago estadoPago = EstadoPago.PAGADO;
 
+    @Column
+    private LocalDateTime fechaPago;
+
     @OneToMany(mappedBy = "boleta", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<DetalleBoleta> detalles = new ArrayList<>();
-
-    @Transient
-    private Integer numeroBoleta;
 }

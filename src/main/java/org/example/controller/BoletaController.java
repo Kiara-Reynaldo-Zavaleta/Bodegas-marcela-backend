@@ -14,7 +14,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/boletas")
-@CrossOrigin(origins = "http://localhost:4200")
 public class BoletaController {
 
     private final BoletaService boletaService;
