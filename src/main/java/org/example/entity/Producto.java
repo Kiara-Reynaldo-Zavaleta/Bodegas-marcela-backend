@@ -30,6 +30,9 @@ public class Producto {
     @Column(nullable = false)
     private boolean activo = true;
 
+    @Column
+    private String categoria;
+
     public Producto(String nombre, BigDecimal precio, Integer stock) {
         this.nombre = nombre;
         this.precio = precio;

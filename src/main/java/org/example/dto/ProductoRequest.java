@@ -9,4 +9,5 @@ public class ProductoRequest {
     private String nombre;
     private BigDecimal precio;
     private Integer stock;
+    private String categoria;
 }

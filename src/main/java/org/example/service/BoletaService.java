@@ -98,7 +98,6 @@ public class BoletaService {
 
         boletaRepository.delete(boleta);
 
-        // Hibernate hace flush antes del SELECT siguiente, así que la lista ya excluye la boleta eliminada
         return obtenerTodas(null, null);
     }
 
@@ -111,7 +110,7 @@ public class BoletaService {
         } else {
             boletas = boletaRepository.findAllByOrderByFechaDesc();
         }
-        Map<Long, Integer> numeros = buildNumerosMap(); // siempre en ASC para numeración correcta
+        Map<Long, Integer> numeros = buildNumerosMap();
         boletas.forEach(b -> b.setNumeroBoleta(numeros.get(b.getId())));
         return boletas;
     }
@@ -154,7 +153,6 @@ public class BoletaService {
             .map(Boleta::getTotal)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // LinkedHashMap mantiene el orden EFECTIVO → YAPE → PLIN en el JSON
         Map<String, BigDecimal> desglose = new LinkedHashMap<>();
         for (FormaPago fp : FormaPago.values()) {
             BigDecimal subtotal = cobradas.stream()

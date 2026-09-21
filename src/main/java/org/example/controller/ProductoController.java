@@ -22,8 +22,8 @@ public class ProductoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Producto>> obtenerTodos() {
-        return ResponseEntity.ok(productoService.obtenerTodos());
+    public ResponseEntity<List<Producto>> obtenerTodos(@RequestParam(required = false) String categoria) {
+        return ResponseEntity.ok(productoService.obtenerTodos(categoria));
     }
 
     @GetMapping("/buscar")

@@ -19,10 +19,14 @@ public class ProductoService {
 
     public Producto crearProducto(ProductoRequest request) {
         Producto producto = new Producto(request.getNombre(), request.getPrecio(), request.getStock());
+        producto.setCategoria(request.getCategoria());
         return productoRepository.save(producto);
     }
 
-    public List<Producto> obtenerTodos() {
+    public List<Producto> obtenerTodos(String categoria) {
+        if (categoria != null && !categoria.isBlank()) {
+            return productoRepository.findByActivoTrueAndCategoriaIgnoreCase(categoria.strip());
+        }
         return productoRepository.findAllByActivoTrue();
     }
 
@@ -43,6 +47,7 @@ public class ProductoService {
         producto.setNombre(request.getNombre());
         producto.setPrecio(request.getPrecio());
         producto.setStock(request.getStock());
+        producto.setCategoria(request.getCategoria());
         return productoRepository.save(producto);
     }
 

@@ -17,7 +17,6 @@ import java.util.stream.IntStream;
 @Service
 public class ReporteService {
 
-    // Fecha ya almacenada en hora Lima — getDayOfWeek() y getHour() devuelven valores Lima directamente
     private static final Map<DayOfWeek, String> NOMBRES_DIA = Map.of(
         DayOfWeek.MONDAY,    "Lunes",
         DayOfWeek.TUESDAY,   "Martes",
